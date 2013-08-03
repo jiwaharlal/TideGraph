@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/img">
+        <file alias="up_extreme">img/up_extreme.png</file>
+        <file alias="down_extreme">img/down_extreme.png</file>
+        <file alias="tab">img/tab.png</file>
+    </qresource>
+</RCC>
