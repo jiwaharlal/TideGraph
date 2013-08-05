@@ -27,6 +27,9 @@ class TideGraphWidget : public QGraphicsWidget
 public:
     explicit TideGraphWidget(QGraphicsItem *parent = 0);
     virtual ~TideGraphWidget();
+
+    const QImage& image();
+    void refresh();
     
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget /* = 0 */) override;
@@ -43,13 +46,27 @@ private:
     void drawGraphBackground(QPainter *painter);
     void drawWaterGraph(QPainter* painter);
     void drawVerticalGrid(QPainter* painter);
+    void drawHorizontalGrid(QPainter* painter);
     void drawExtremes(QPainter* painter);
 
-    int timeToImageX(const QDateTime& dateTime);
+    int timeToImgChartX(const QDateTime& dateTime);
     qreal tideLevelToImageY(double tideLevel);
 private:
-    QPixmap myUpExtremePixmap;
+    koki::rl_ptr<QImage> myTideGraphImage;
+    koki::rl_ptr<QImage> myVGridCaptionsImage;
+
+    QRect myImageChartRect;
+
+    int myLeftBorderWidth;
+    int myRightBorderWidth;
+    int myTopBorderHeight;
+    int myBottomBorderHeight;
+
+    QPixmap myTopAreaPixmap;
+    QPixmap myHighExtremePixmap;
+    QPixmap myLowExtremePixmap;
     QPixmap myTabPixmap;
+    QPixmap myCursorPixmap;
 
     TideDataCache* myCache;
     QDate myDate;
@@ -63,8 +80,7 @@ private:
     double myMinTideLevel;
     double myMaxTideLevel;
 
-    koki::rl_ptr<QImage> myTideGraphImage;
-    qreal myPixelsPerPointInterval;
+    qreal myPixelsPerPoint;
 };
 
 #endif // TIDEGRAPHWIDGET_H

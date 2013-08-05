@@ -8,10 +8,10 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     QGraphicsScene scene;
-    MainWindow* w = new MainWindow;
+    MainWindow* w = new MainWindow(scene);
     scene.addItem(w);
     MainView view(&scene);
-    view.resize(1029, 605);
+    view.resize(1429, 605);
     view.show();
     
     return a.exec();

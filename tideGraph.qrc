@@ -1,7 +1,9 @@
 <RCC>
-    <qresource prefix="/img">
-        <file alias="up_extreme">img/up_extreme.png</file>
-        <file alias="down_extreme">img/down_extreme.png</file>
-        <file alias="tab">img/tab.png</file>
+    <qresource prefix="/img" lang="tab">
+        <file alias="extrem_tab">img/ts_extrem_tab.png</file>
+        <file alias="extreme_high">img/ts_extrem_high.png</file>
+        <file alias="extreme_low">img/ts_extrem_low.png</file>
+        <file alias="graph_cursor">img/ts_graph_cursor.png</file>
+        <file alias="graph_top_gradient">img/graph_top_gradient.png</file>
     </qresource>
 </RCC>

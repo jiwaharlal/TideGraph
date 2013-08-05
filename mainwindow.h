@@ -10,10 +10,13 @@ class MainWindow : public QGraphicsWidget
     Q_OBJECT
     
 public:
-    MainWindow(QGraphicsWidget *parent = 0);
+    MainWindow(QGraphicsScene& scene, QGraphicsWidget *parent = 0);
     ~MainWindow();
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+
+    virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget /* = 0 */) override;
 private:
     TideGraphWidget* myTideGraph;
 };
