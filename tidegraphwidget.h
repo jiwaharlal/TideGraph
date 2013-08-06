@@ -24,6 +24,8 @@ struct Extreme
 class TideGraphWidget : public QGraphicsWidget
 {
     Q_OBJECT
+    Q_PROPERTY( qreal graphOffset READ graphOffset WRITE setGraphOffset )
+
 public:
     explicit TideGraphWidget(QGraphicsItem *parent = 0);
     virtual ~TideGraphWidget();
@@ -33,12 +35,15 @@ public:
     
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget /* = 0 */) override;
+
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
-protected:
-signals:
-    
-public slots:
+protected Q_SLOTS:
+    void onAnimationEnd();
+Q_SIGNALS:
+    void dateChanged(const QDate& newDate);
 
 private:
     void refreshGraph();
@@ -48,14 +53,28 @@ private:
     void drawVerticalGrid(QPainter* painter);
     void drawHorizontalGrid(QPainter* painter);
     void drawExtremes(QPainter* painter);
+    void drawCursor(QPainter* painter);
 
     int timeToImgChartX(const QDateTime& dateTime);
     qreal tideLevelToImageY(double tideLevel);
+    int chartXToPointIndex(qreal x);
+    qreal chartXToWidgetX(qreal x);
+    qreal widgetXToChartX(qreal x);
+    QTime chartXToTime(qreal x);
+
+private:
+    void setGraphOffset( const qreal& offset );
+    qreal graphOffset() const;
+
+    void privSetDateWithAnimation(const QDate& newDate);
+
+    //void animateChangeDay(int dayDiff);
 private:
     koki::rl_ptr<QImage> myTideGraphImage;
     koki::rl_ptr<QImage> myVGridCaptionsImage;
 
     QRect myImageChartRect;
+    QRectF myChartScreenRect;
 
     int myLeftBorderWidth;
     int myRightBorderWidth;
@@ -81,6 +100,13 @@ private:
     double myMaxTideLevel;
 
     qreal myPixelsPerPoint;
+
+    QPointF myPrevMousePos;
+    qreal myChartOffset;
+    qreal myLastMoveOffset;
+
+    bool myIsAnimating;
+    qreal myCursorX;
 };
 
 #endif // TIDEGRAPHWIDGET_H

@@ -22,11 +22,18 @@ int TideDataCache::pointsPerDay()
     return myDataCache.begin()->second.size();
 }
 
-QDate TideDataCache::reducedDate(const QDate &date)
+const TideDataCache::PointList &TideDataCache::pointsForDay(const QDate &date) const
+{
+    CacheMap::const_iterator it = myDataCache.find(reducedDate(date));
+    assert(it != myDataCache.end());
+    return it->second;
+}
+
+QDate TideDataCache::reducedDate(const QDate &date) const
 {
     QDate minDate = myDataCache.begin()->first;
     QDate maxDate(minDate);
-    for (CacheMap::iterator it = myDataCache.begin(); it != myDataCache.end(); ++it)
+    for (CacheMap::const_iterator it = myDataCache.begin(); it != myDataCache.end(); ++it)
     {
         QDate pretender = it->first;
         if (pretender < minDate) {

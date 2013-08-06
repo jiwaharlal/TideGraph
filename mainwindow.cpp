@@ -17,9 +17,10 @@ MainWindow::MainWindow(QGraphicsScene &scene, QGraphicsWidget *parent)
 
     setMinimumSize(1424, 600);
     myTideGraph = new TideGraphWidget(this);
-    //scene.addItem(this);
 
     windowLayout->addItem(myTideGraph);
+
+    connect(myTideGraph, SIGNAL(dateChanged(QDate)), this, SLOT(setDate(QDate)));
 }
 
 MainWindow::~MainWindow()
@@ -27,22 +28,30 @@ MainWindow::~MainWindow()
     
 }
 
-void MainWindow::keyPressEvent(QKeyEvent *event)
+void MainWindow::setDate(const QDate &newDate)
 {
-    if (event->key() == Qt::Key_Escape)
-    {
-        this->close();
-    } else {
-        myTideGraph->refresh();
-    }
+    myDateString = newDate.toString();
+    update();
 }
 
-void MainWindow::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
-{
-    int i = 0;
-}
+//void MainWindow::keyPressEvent(QKeyEvent *event)
+//{
+//    if (event->key() == Qt::Key_Escape)
+//    {
+//        this->close();
+//    } else {
+//        myTideGraph->refresh();
+//    }
+//}
+
+//void MainWindow::mousePressEvent(QGraphicsSceneMouseEvent *event)
+//{
+//    int i = 0;
+//}
 
 void MainWindow::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
-    painter->drawImage(0, myTideGraph->size().height(), myTideGraph->image());
+    painter->setPen(Qt::black);
+    painter->drawText(0, myTideGraph->size().height() + 50, myDateString);
+    //painter->drawImage(0, myTideGraph->size().height(), myTideGraph->image());
 }

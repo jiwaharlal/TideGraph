@@ -7,10 +7,19 @@ MainView::MainView(QGraphicsScene *parent) :
 {
 }
 
+//void MainView::mousePressEvent(QMouseEvent *event)
+//{
+//    QGraphicsView::mousePressEvent(event);
+//}
+
 void MainView::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Escape)
     {
         this->close();
+    } else {
+        QGraphicsView::keyPressEvent(event);
     }
 }
+
+//void MaintView::

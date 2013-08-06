@@ -12,17 +12,19 @@
 class TideDataCache
 {
 public:
+    typedef std::list<double> PointList;
+
     TideDataCache(const std::string aDataDirPath);
 
     int pointsPerDay();
 
     template <class Iterator>
     void getPointsForDay(const QDate& date, Iterator outIt);
+    const PointList& pointsForDay(const QDate& date) const;
 private:
-    typedef std::list<double> PointList;
     typedef std::map<QDate, PointList> CacheMap;
 
-    QDate reducedDate(const QDate& date);
+    QDate reducedDate(const QDate& date) const;
     void loadDataFromFile(const QString& fileName, PointList& outPointList);
 
 private:

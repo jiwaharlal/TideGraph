@@ -10,6 +10,8 @@ public:
     explicit MainView(QGraphicsScene *parent = 0);
     
 protected:
+//    void mousePressEvent(QMouseEvent *event);
+    //void mouseReleaseEvent(QEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
 signals:
     
