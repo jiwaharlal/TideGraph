@@ -6,6 +6,8 @@
 #include <QLayout>
 
 #include "tidegraphwidget.h"
+#include "ButtonWidget.h"
+#include "LabelWidget.h"
 
 #include <QPainter>
 
@@ -13,12 +15,20 @@ MainWindow::MainWindow(QGraphicsScene &scene, QGraphicsWidget *parent)
     : QGraphicsWidget(parent)
 {
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    QGraphicsLinearLayout* windowLayout = new QGraphicsLinearLayout(this);
+    QGraphicsLinearLayout* windowLayout = new QGraphicsLinearLayout(Qt::Vertical, this);
 
     setMinimumSize(1424, 600);
     myTideGraph = new TideGraphWidget(this);
 
     windowLayout->addItem(myTideGraph);
+
+    ButtonWidget* buttonWidget = new ButtonWidget(this);
+    buttonWidget->setFlag(QGraphicsItem::ItemIsPanel);
+    windowLayout->addItem(buttonWidget);
+    QGraphicsLinearLayout* buttonLayout = new QGraphicsLinearLayout(Qt::Horizontal, buttonWidget);
+    LabelWidget* labelWidget = new LabelWidget();
+    labelWidget->setParent(buttonWidget);
+    buttonLayout->addItem(labelWidget);
 
     connect(myTideGraph, SIGNAL(dateChanged(QDate)), this, SLOT(setDate(QDate)));
 }

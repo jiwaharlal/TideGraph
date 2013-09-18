@@ -11,8 +11,10 @@
 #include <QFontMetrics>
 #include <QPropertyAnimation>
 
+#include <QElapsedTimer>
+#include <QDebug>
+
 static const int NUM_DAYS_IN_CACHE_IMAGE = 3;
-static const int MSECS_IN_SEC = 1000;
 static const int SECS_IN_MIN = 60;
 static const int MINS_IN_HOUR = 60;
 static const int HOURS_IN_DAY = 24;
@@ -32,6 +34,13 @@ static const int RIGHT_BORDER_WIDTH = 30;
 static const int CURSOR_INFO_RECT_WIDTH = 140;
 static const int CURSOR_INFO_RECT_HEIGHT = 55;
 
+static const QFont TIDE_LEVEL_SCALE_FONT("Arial", 12, QFont::Bold);
+static const QFont TIME_SCALE_FONT("Arial", 11, QFont::Bold);
+static const QFont EXTREM_TAB_TIME_FONT("Arial", 14, QFont::Normal);
+static const QFont EXTREM_TAB_LEVEL_FONT("Arial", 14, QFont::Bold);
+static const QFont CURSOR_TIME_FONT("Arial", 16, QFont::Normal);
+static const QFont CURSOR_TIDE_LEVEL_FONT("Arial", 16, QFont::Bold);
+
 TideGraphWidget::TideGraphWidget(QGraphicsItem *parent)
     : QGraphicsWidget(parent)
     , myTopAreaPixmap(":/img/graph_top_gradient")
@@ -39,10 +48,9 @@ TideGraphWidget::TideGraphWidget(QGraphicsItem *parent)
     , myLowExtremePixmap(":/img/extreme_low")
     , myTabPixmap(":/img/extrem_tab")
     , myCursorPixmap(":/img/graph_cursor")
-    , myCache(NULL)
-    , myLeftBorderWidth(40)
-    , myRightBorderWidth(40)
-    , myBottomBorderHeight(30)
+    , myLeftMargin(40)
+    , myRightMargin(40)
+    , myBottomMargin(30)
     , myChartOffset(0)
     , myLastMoveOffset(0)
     , myIsAnimating(false)
@@ -52,12 +60,12 @@ TideGraphWidget::TideGraphWidget(QGraphicsItem *parent)
     setMaximumSize(700, 350);
     setMinimumSize(700, 350);
 
-    myTopBorderHeight = myTopAreaPixmap.height();
+    myTopMargin = myTopAreaPixmap.height();
 
     QDir dir = QDir::current();
     QString path = dir.absolutePath();
     assert(dir.cd("data"));
-    myCache = new TideDataCache(dir.absolutePath().toStdString());
+    myCache.reset(new TideDataCache(dir.absolutePath().toStdString()));
     myDate = QDate(2013, 10, 4);
 
     refreshGraph();
@@ -65,8 +73,6 @@ TideGraphWidget::TideGraphWidget(QGraphicsItem *parent)
 
 TideGraphWidget::~TideGraphWidget()
 {
-    delete myCache;
-    myCache = NULL;
 }
 
 const QImage &TideGraphWidget::image()
@@ -74,37 +80,27 @@ const QImage &TideGraphWidget::image()
     return *myTideGraphImage;
 }
 
-void TideGraphWidget::refresh()
-{
-    refreshGraph();\
-    update();
-}
-
 void TideGraphWidget::refreshGraph()
 {
-    QFont fnt( QString("Arial") );
-    fnt.setBold( true );
-    fnt.setPixelSize( 14 );
+    myBottomMargin = QFontMetrics(TIME_SCALE_FONT).height() * 3;
 
-    myBottomBorderHeight = QFontMetrics(fnt).height() * 3;
-
-    int chartWidth = size().width() - myLeftBorderWidth - myRightBorderWidth;
+    int chartWidth = size().width() - myLeftMargin - myRightMargin;
     int imgChartWidth = chartWidth * 3;
-    int imgWidth = imgChartWidth + myLeftBorderWidth + myRightBorderWidth;
+    int imgWidth = imgChartWidth + myLeftMargin + myRightMargin;
     int imgHeight = boundingRect().height();
 
     myTideGraphImage.reset(new QImage(imgWidth, imgHeight, QImage::Format_ARGB32));
-    int chartHeight = imgHeight - myTopBorderHeight - myBottomBorderHeight;
+    int chartHeight = imgHeight - myTopMargin - myBottomMargin;
 
-    myVGridCaptionsImage.reset(new QImage(myLeftBorderWidth, chartHeight, QImage::Format_ARGB32));
+    myVGridCaptionsImage.reset(new QImage(myLeftMargin, chartHeight, QImage::Format_ARGB32));
     myImageChartRect = QRect(
-                myLeftBorderWidth,
-                myTopBorderHeight,
+                myLeftMargin,
+                myTopMargin,
                 imgChartWidth,
-                imgHeight - myTopBorderHeight - myBottomBorderHeight);
+                imgHeight - myTopMargin - myBottomMargin);
     myChartScreenRect = QRectF(
-                myLeftBorderWidth,
-                myTopBorderHeight,
+                myLeftMargin,
+                myTopMargin,
                 chartWidth,
                 chartHeight);
 
@@ -114,19 +110,28 @@ void TideGraphWidget::refreshGraph()
     {
         myCache->getPointsForDay(myDate.addDays(i), std::back_inserter<PointList>(myPointList));
     }
+    // <debug>
+    qDebug() << myPointList[288] << " " << myPointList[289];
+    // </debug>
 
     myPixelsPerPoint = static_cast<qreal>(chartWidth) / myCache->pointsPerDay();
 
     findExtremes();
 
     QPainter painter(myTideGraphImage.get());
-    painter.setRenderHint(QPainter::Antialiasing);
 
+    QElapsedTimer timer;
+    timer.start();
     drawGraphBackground(&painter);
+    qDebug() << "bg: " << timer.restart();
     drawWaterGraph(&painter);
+    qDebug() << "water: " << timer.restart();
     drawVerticalGrid(&painter);
+    qDebug() << "virtical grid: " << timer.restart();
     drawHorizontalGrid(&painter);
+    qDebug() << "horizontal grid: " << timer.restart();
     drawExtremes(&painter);
+    qDebug() << "extrems: " << timer.restart();
 }
 
 void TideGraphWidget::findExtremes()
@@ -197,17 +202,16 @@ void TideGraphWidget::drawWaterGraph(QPainter* painter)
     path.closeSubpath();
 
     painter->setBrush(WATER_COLOR);
-    painter->setPen(QPen(WATER_COLOR, 2));
+    painter->setPen(QPen(WATER_COLOR, 1));
     painter->drawPath(path);
+    painter->setRenderHint(QPainter::Antialiasing);
     painter->strokePath(whitePath, QPen(Qt::white, 2));
+    painter->setRenderHint(QPainter::Antialiasing, false);
 }
 
 void TideGraphWidget::drawVerticalGrid(QPainter *painter)
 {
-    QFont timeFnt("Arial");
-    timeFnt.setBold( true );
-    timeFnt.setPixelSize( 16 );
-    painter->setFont(timeFnt);
+    painter->setFont(TIME_SCALE_FONT/*timeFnt*/);
 
     static const int bottomOverhang = 5;
 
@@ -224,22 +228,16 @@ void TideGraphWidget::drawVerticalGrid(QPainter *painter)
     {
         qreal x = timeToImgChartX(dt);
         qreal textY = myImageChartRect.bottom() + bottomOverhang;
-        painter->setPen(Qt::white);
+        painter->setPen(GRID_COLOR);
         painter->drawLine(QPointF(x, myImageChartRect.y()), QPointF(x, textY));
         painter->setPen(Qt::black);
-        QRectF textRect(x - textWidth / 2, myImageChartRect.bottom(), textWidth, myBottomBorderHeight);
+        QRectF textRect(x - textWidth / 2, myImageChartRect.bottom(), textWidth, myBottomMargin);
         painter->drawText(textRect, Qt::AlignCenter, dt.time().toString("hh:mm"));
     }
-
 }
 
 void TideGraphWidget::drawHorizontalGrid(QPainter *painter)
 {
-    QFont captionFnt("Arial");
-    captionFnt.setBold( true );
-    captionFnt.setPixelSize( 16 );
-    QFontMetrics metrics(captionFnt);
-
     QPen solidLinePen( GRID_COLOR, 1 );
     QPen dashedLinePen( solidLinePen );
     QVector< qreal > dashes;
@@ -261,7 +259,8 @@ void TideGraphWidget::drawHorizontalGrid(QPainter *painter)
 
     QPainter gridCaptionsPainter(myVGridCaptionsImage.get());
     gridCaptionsPainter.fillRect(myVGridCaptionsImage->rect(), SIDE_BORDERS_COLOR);
-    gridCaptionsPainter.setFont(captionFnt);
+    gridCaptionsPainter.setFont(TIDE_LEVEL_SCALE_FONT);
+    QFontMetrics metrics(gridCaptionsPainter.font());
     gridCaptionsPainter.setPen( Qt::black );
     // Draw horizontal grid lines
     for ( double val = minLocalRoundedHeight; val < maxLocalHeight; val += valIncrement )
@@ -283,10 +282,10 @@ void TideGraphWidget::drawHorizontalGrid(QPainter *painter)
         painter->drawLine( startPoint - valOffset, endPoint - valOffset );
 
         int TEXT_MARGIN = 5;
-        QRectF numRect( 0, startPoint.y() - valOffset.y() - metrics.height() / 2, myLeftBorderWidth/*myImageChartRect.left() - TEXT_MARGIN / 2*/, 20 );
+        QRectF numRect( 0, startPoint.y() - valOffset.y() - metrics.height() / 2, myLeftMargin/*myImageChartRect.left() - TEXT_MARGIN / 2*/, 20 );
         if ( numRect.bottom() < myImageChartRect.bottom() && numRect.top() > myImageChartRect.top() )
         {
-            numRect.adjust(0, -myTopBorderHeight * 2, 0, 0);
+            numRect.adjust(0, -myTopMargin * 2, 0, 0);
             gridCaptionsPainter.drawText(numRect, Qt::AlignCenter, QString::number( val, 'f', 1 ) );
         }
     }
@@ -295,20 +294,15 @@ void TideGraphWidget::drawHorizontalGrid(QPainter *painter)
 
 void TideGraphWidget::drawExtremes(QPainter *painter)
 {
+    // <debug>
+
+    // <end debug>
     assert(!myTabPixmap.isNull());
-
-    QFont timeFnt("Arial");
-    timeFnt.setBold( false );
-    timeFnt.setPixelSize( 20 );
-
-    QFont heightFnt("Arial");
-    heightFnt.setBold( true );
-    heightFnt.setPixelSize( 20 );
 
     QPen vLinePen(Qt::white);
     vLinePen.setWidth(3);
-    painter->setPen(vLinePen);
 
+    // <debug>
     QString unit("m");
     for (ExtremeList::const_iterator it = myExtremeList.begin(); it != myExtremeList.end(); ++it)
     {
@@ -335,11 +329,11 @@ void TideGraphWidget::drawExtremes(QPainter *painter)
 
         QTime extTime( it->dateTime.time() );
         painter->setPen( Qt::black );
-        painter->setFont( timeFnt );
+        painter->setFont( EXTREM_TAB_TIME_FONT );
         painter->drawText( textRect, Qt::AlignHCenter | Qt::AlignBottom, QString( "%1:%2" ).arg( extTime.hour(), 2, 10, QChar('0') ).arg( extTime.minute(), 2, 10, QChar('0') ) );
 
         textRect.translate( 0, textRect.height() );
-        painter->setFont( heightFnt );
+        painter->setFont( EXTREM_TAB_LEVEL_FONT );
         QString data = QString::number( it->value , 'f', 2 );
         painter->drawText( textRect, Qt::AlignHCenter | Qt::AlignTop, QString( "%1 %2" ).arg( data, unit ) );
     }
@@ -354,7 +348,9 @@ void TideGraphWidget::drawCursor(QPainter *painter)
         return;
     }
 
-    double tideLevel = (myPointList[levelIndex] + myPointList[levelIndex + 1]) / 2;
+    QTime cursorTime = chartXToTime(myCursorX);
+    double tideLevel = tideLevelAt(QDateTime(myDate).addSecs(QTime(0, 0).secsTo(cursorTime)));
+//                myPointList[levelIndex] + myPointList[levelIndex + 1]) / 2;
     qreal y = tideLevelToImageY(tideLevel);
     QPointF imgPos(x - myCursorPixmap.width() / 2, y - myCursorPixmap.height() / 2);
     painter->drawPixmap(imgPos, myCursorPixmap);
@@ -362,7 +358,7 @@ void TideGraphWidget::drawCursor(QPainter *painter)
     // draw cursor hint
     QPointF cursorPos(x, y);
     QRectF cursorInfoRect( cursorPos - QPointF( CURSOR_INFO_RECT_WIDTH / 2, CURSOR_INFO_RECT_HEIGHT + myCursorPixmap.height() ),
-        QSizeF( CURSOR_INFO_RECT_WIDTH, CURSOR_INFO_RECT_HEIGHT ) );
+    QSizeF( CURSOR_INFO_RECT_WIDTH, CURSOR_INFO_RECT_HEIGHT ) );
     if ( cursorInfoRect.top() < myChartScreenRect.top() + 30 )
     {
         cursorInfoRect.moveTop( myChartScreenRect.top() + 30 );
@@ -440,34 +436,17 @@ void TideGraphWidget::drawCursor(QPainter *painter)
     painter->drawPath( path.simplified() );
 
     // Draw date and water height value
-    QFont timeFnt("Arial");
-    timeFnt.setBold( false );
-    timeFnt.setPixelSize( 20 );
-
-    QFont heightFnt("Arial");
-    heightFnt.setBold( true );
-    heightFnt.setPixelSize( 20 );
-
     cursorInfoRect.adjust( 0, 5, 0, -cursorInfoRect.height() / 2 );
 
-    QTime cursorTime = chartXToTime(myCursorX);
 
-
-    /*
-    int graphRangeSec = SECS_IN_DAY;
-    int offsetSec = graphRangeSec / (my - 1);
-    Alice::DateTime cursorTime = m_StartDateTime;
-    cursorTime.addSeconds( offsetSec * m_CurrentIndex );
-    */
     painter->setPen( Qt::black );
-    painter->setFont( timeFnt );
+    painter->setFont( CURSOR_TIME_FONT );
     painter->drawText( cursorInfoRect, Qt::AlignHCenter | Qt::AlignBottom, QString( "%1:%2" ).arg( cursorTime.hour(), 2, 10, QChar('0') ).arg( cursorTime.minute(), 2, 10, QChar('0') ) );
 
     cursorInfoRect.translate( 0, cursorInfoRect.height() );
-    painter->setFont( heightFnt );
-    /*QString data = QString::number( depthFromBase( m_GraphPoints[ m_CurrentIndex ] ) , 'f', 2 );
-    */
+    painter->setFont( CURSOR_TIDE_LEVEL_FONT );
 
+    // <debug>
     QString unit = "Mt";
     painter->drawText( cursorInfoRect, Qt::AlignHCenter | Qt::AlignTop, QString("%1 "+unit).arg(tideLevel, 0, 'f', 2) );
 }
@@ -499,9 +478,7 @@ int TideGraphWidget::chartXToPointIndex(qreal x)
 
 qreal TideGraphWidget::chartXToWidgetX(qreal x)
 {
-    qreal dayChartWidth = boundingRect().width() - myLeftBorderWidth - myRightBorderWidth;
-
-    return x - dayChartWidth + myChartOffset + myChartScreenRect.x();
+    return x - myChartScreenRect.width() + myChartOffset + myChartScreenRect.x();
 }
 
 qreal TideGraphWidget::widgetXToChartX(qreal x)
@@ -514,6 +491,17 @@ QTime TideGraphWidget::chartXToTime(qreal x)
     qreal secsOnChart = SECS_IN_DAY * NUM_DAYS_IN_CACHE_IMAGE;
     qreal secsFromOrigin = secsOnChart * x / myImageChartRect.width();
     return QDateTime(myDate.addDays(-1)).addSecs(secsFromOrigin).time();
+}
+
+double TideGraphWidget::tideLevelAt(const QDateTime &dateTime)
+{
+    long long secsTo = QDateTime(myDate).addDays(-1).secsTo(dateTime);
+    int pointIndex = secsTo * myCache->pointsPerDay() / SECS_IN_DAY;
+    qreal secsPerPoint = SECS_IN_DAY / myCache->pointsPerDay();
+    qreal t1 = pointIndex * secsPerPoint;
+    qreal y1 = myPointList[pointIndex];
+    qreal y2 = myPointList[pointIndex + 1];
+    return y1 + (y2 - y1) * (secsTo - t1) / secsPerPoint;
 }
 
 void TideGraphWidget::setGraphOffset(const qreal &offset)
@@ -529,7 +517,7 @@ qreal TideGraphWidget::graphOffset() const
 
 void TideGraphWidget::privSetDateWithAnimation(const QDate &newDate)
 {
-    qreal chartDayWidth = boundingRect().width() - myLeftBorderWidth - myRightBorderWidth;
+    qreal chartDayWidth = boundingRect().width() - myLeftMargin - myRightMargin;
     qreal targetGraphOffset;
     qreal pixelsLeft;
     if (newDate == myDate)
@@ -570,12 +558,11 @@ void TideGraphWidget::paint(QPainter *painter, const QStyleOptionGraphicsItem *o
     Q_UNUSED(option);
     Q_UNUSED(widget);
 
-    qreal dayChartWidth = boundingRect().width() - myLeftBorderWidth - myRightBorderWidth;
     QRectF srcRect = boundingRect();
-    srcRect.moveTo(dayChartWidth - myChartOffset, 0);
+    srcRect.moveTo(myChartScreenRect.width() - myChartOffset, 0);
     painter->drawImage(QPoint(0, 0), *myTideGraphImage, srcRect);
-    painter->drawImage(QPoint(0, myTopBorderHeight), *myVGridCaptionsImage);
-    painter->fillRect(boundingRect().right() - myRightBorderWidth, myTopBorderHeight, myRightBorderWidth, myImageChartRect.height(), SIDE_BORDERS_COLOR);
+    painter->drawImage(QPoint(0, myTopMargin), *myVGridCaptionsImage);
+    painter->fillRect(boundingRect().right() - myRightMargin, myTopMargin, myRightMargin, myImageChartRect.height(), SIDE_BORDERS_COLOR);
 
     drawCursor(painter);
 }
@@ -613,7 +600,6 @@ void TideGraphWidget::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
             myLastMoveOffset = xOffset;
         }
         myChartOffset += xOffset;
-        qreal dayChartWidth = boundingRect().width() - myLeftBorderWidth - myRightBorderWidth;
 
         myPrevMousePos = event->pos();
         update();

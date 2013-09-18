@@ -18,14 +18,18 @@ SOURCES += main.cpp\
     tidegraphwidget.cpp \
     mainview.cpp \
     tidedatacache.cpp \
-    mainscene.cpp
+    mainscene.cpp \
+    ButtonWidget.cpp \
+    LabelWidget.cpp
 
 HEADERS  += mainwindow.h \
     maingraphicswidget.h \
     tidegraphwidget.h \
     mainview.h \
     tidedatacache.h \
-    mainscene.h
+    mainscene.h \
+    ButtonWidget.h \
+    LabelWidget.h
 
 RESOURCES += \
     tideGraph.qrc

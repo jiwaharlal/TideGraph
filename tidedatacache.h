@@ -1,7 +1,7 @@
 #ifndef TIDEDATACACHE_H
 #define TIDEDATACACHE_H
 
-#include <list>
+#include <vector>
 #include <map>
 #include <algorithm>
 #include <cassert>
@@ -12,7 +12,7 @@
 class TideDataCache
 {
 public:
-    typedef std::list<double> PointList;
+    typedef std::vector<double> PointList;
 
     TideDataCache(const std::string aDataDirPath);
 

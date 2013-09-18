@@ -1,5 +1,5 @@
-#ifndef TIDEGRAPHWIDGET_H
-#define TIDEGRAPHWIDGET_H
+#ifndef __TIDE_GRAPH_WIDGET_H__
+#define __TIDE_GRAPH_WIDGET_H__
 
 #include <QGraphicsWidget>
 
@@ -31,7 +31,6 @@ public:
     virtual ~TideGraphWidget();
 
     const QImage& image();
-    void refresh();
     
 protected:
     virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget /* = 0 */) override;
@@ -61,6 +60,7 @@ private:
     qreal chartXToWidgetX(qreal x);
     qreal widgetXToChartX(qreal x);
     QTime chartXToTime(qreal x);
+    double tideLevelAt(const QDateTime& dateTime);
 
 private:
     void setGraphOffset( const qreal& offset );
@@ -76,10 +76,10 @@ private:
     QRect myImageChartRect;
     QRectF myChartScreenRect;
 
-    int myLeftBorderWidth;
-    int myRightBorderWidth;
-    int myTopBorderHeight;
-    int myBottomBorderHeight;
+    int myLeftMargin;
+    int myRightMargin;
+    int myTopMargin;
+    int myBottomMargin;
 
     QPixmap myTopAreaPixmap;
     QPixmap myHighExtremePixmap;
@@ -87,7 +87,7 @@ private:
     QPixmap myTabPixmap;
     QPixmap myCursorPixmap;
 
-    TideDataCache* myCache;
+    koki::rl_ptr<TideDataCache> myCache;
     QDate myDate;
 
     typedef std::vector<double> PointList;
@@ -109,4 +109,4 @@ private:
     qreal myCursorX;
 };
 
-#endif // TIDEGRAPHWIDGET_H
+#endif // __TIDE_GRAPH_WIDGET_H__
