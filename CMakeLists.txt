@@ -5,6 +5,7 @@ set(PROJECT TideGraph)
 
 
 set (SOURCES
+graphicsslider.cpp
 main.cpp
 maingraphicswidget.cpp
 mainscene.cpp
@@ -14,6 +15,7 @@ tidedatacache.cpp
 tidegraphwidget.cpp )
 
 set (HEADERS
+graphicsslider.h
 maingraphicswidget.h
 mainscene.h
 mainview.h

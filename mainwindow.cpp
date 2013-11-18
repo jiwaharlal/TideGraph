@@ -6,6 +6,7 @@
 #include <QLayout>
 
 #include "tidegraphwidget.h"
+#include "GraphicsSlider.h"
 
 #include <QPainter>
 
@@ -13,12 +14,16 @@ MainWindow::MainWindow(QGraphicsScene &scene, QGraphicsWidget *parent)
     : QGraphicsWidget(parent)
 {
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    QGraphicsLinearLayout* windowLayout = new QGraphicsLinearLayout(this);
+    QGraphicsLinearLayout* windowLayout = new QGraphicsLinearLayout(Qt::Vertical, this);
 
-    setMinimumSize(1424, 600);
+    setMinimumSize(824, 600);
     myTideGraph = new TideGraphWidget(this);
 
     windowLayout->addItem(myTideGraph);
+
+    GraphicsSlider* slider = new GraphicsSlider(10, 100, this);
+    slider->setValue( 30 );
+    windowLayout->addItem(slider);
 
     connect(myTideGraph, SIGNAL(dateChanged(QDate)), this, SLOT(setDate(QDate)));
 }

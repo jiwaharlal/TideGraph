@@ -5,5 +5,6 @@
         <file alias="extreme_low">img/ts_extrem_low.png</file>
         <file alias="graph_cursor">img/ts_graph_cursor.png</file>
         <file alias="graph_top_gradient">img/graph_top_gradient.png</file>
+        <file alias="slider_handle">img/slider_handle.png</file>
     </qresource>
 </RCC>
