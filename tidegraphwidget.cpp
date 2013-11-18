@@ -56,7 +56,7 @@ TideGraphWidget::TideGraphWidget(QGraphicsItem *parent)
 
     QDir dir = QDir::current();
     QString path = dir.absolutePath();
-    assert(dir.cd("data"));
+    assert(dir.cd("../data"));
     myCache = new TideDataCache(dir.absolutePath().toStdString());
     myDate = QDate(2013, 10, 4);
 

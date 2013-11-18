@@ -22,7 +22,7 @@ MainWindow::MainWindow(QGraphicsScene &scene, QGraphicsWidget *parent)
     windowLayout->addItem(myTideGraph);
 
     GraphicsSlider* slider = new GraphicsSlider(10, 100, this);
-    slider->setValue( 30 );
+    slider->setValue( 80 );
     windowLayout->addItem(slider);
 
     connect(myTideGraph, SIGNAL(dateChanged(QDate)), this, SLOT(setDate(QDate)));
